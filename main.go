@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"time"
 	"strconv"
+	"time"
 
 	"github.com/bigdatadev/goryman"
 	"github.com/golang/glog"
@@ -54,7 +54,7 @@ func main() {
 
 	ttl := float32(*ttlEventRiemann)
 
-    stateEmpty := ""
+	stateEmpty := ""
 
 	// Setting up the ticker
 	ticker := time.NewTicker(*sampleInterval).C
@@ -78,12 +78,12 @@ func main() {
 			// Get stats
 			// Push into riemann
 			for _, container := range returned {
-				pushToRiemann(r, *hostEventRiemann, fmt.Sprintf("Cpu.Load %s", container.Aliases[0]), int(container.Stats[0].Cpu.Load), ttl, container.Aliases, stateEmpty)
+				pushToRiemann(r, *hostEventRiemann, fmt.Sprintf("Cpu.LoadAverage %s", container.Aliases[0]), int(container.Stats[0].Cpu.LoadAverage), ttl, container.Aliases, stateEmpty)
 
 				pushToRiemann(r, *hostEventRiemann, fmt.Sprintf("Cpu.Usage.Total %s", container.Aliases[0]), int(container.Stats[0].Cpu.Usage.Total), ttl, container.Aliases, stateEmpty)
 
-                cpuUsagePercent := getCpuTotalPercent(&container.Spec, container.Stats, machineInfo)
-                stateCpu := computeStatePercent(cpuUsagePercent)
+				cpuUsagePercent := getCpuTotalPercent(&container.Spec, container.Stats, machineInfo)
+				stateCpu := computeStatePercent(cpuUsagePercent)
 				pushToRiemann(r, *hostEventRiemann, fmt.Sprintf("Cpu.Usage.TotalPercent %s", container.Aliases[0]), cpuUsagePercent, ttl, container.Aliases, stateCpu)
 
 				pushToRiemann(r, *hostEventRiemann, fmt.Sprintf("Cpu.Usage.User %s", container.Aliases[0]), int(container.Stats[0].Cpu.Usage.User), ttl, container.Aliases, stateEmpty)
@@ -91,11 +91,11 @@ func main() {
 
 				pushToRiemann(r, *hostEventRiemann, fmt.Sprintf("Memory.UsageMB %s", container.Aliases[0]), getMemoryUsage(container.Stats), ttl, container.Aliases, stateEmpty)
 
-                memoryUsagePercent := getMemoryUsagePercent(&container.Spec, container.Stats, machineInfo)
-                stateMemory := computeStatePercent(float64(memoryUsagePercent))
+				memoryUsagePercent := getMemoryUsagePercent(&container.Spec, container.Stats, machineInfo)
+				stateMemory := computeStatePercent(float64(memoryUsagePercent))
 				pushToRiemann(r, *hostEventRiemann, fmt.Sprintf("Memory.UsagePercent %s", container.Aliases[0]), memoryUsagePercent, ttl, container.Aliases, stateMemory)
-				
-                pushToRiemann(r, *hostEventRiemann, fmt.Sprintf("Memory.UsageHotPercent %s", container.Aliases[0]), getHotMemoryPercent(&container.Spec, container.Stats, machineInfo), ttl, container.Aliases, stateEmpty)
+
+				pushToRiemann(r, *hostEventRiemann, fmt.Sprintf("Memory.UsageHotPercent %s", container.Aliases[0]), getHotMemoryPercent(&container.Spec, container.Stats, machineInfo), ttl, container.Aliases, stateEmpty)
 				pushToRiemann(r, *hostEventRiemann, fmt.Sprintf("Memory.UsageColdPercent %s", container.Aliases[0]), getColdMemoryPercent(&container.Spec, container.Stats, machineInfo), ttl, container.Aliases, stateEmpty)
 
 				pushToRiemann(r, *hostEventRiemann, fmt.Sprintf("Network.RxBytes %s", container.Aliases[0]), int(container.Stats[0].Network.RxBytes), ttl, container.Aliases, stateEmpty)
@@ -108,36 +108,33 @@ func main() {
 				pushToRiemann(r, *hostEventRiemann, fmt.Sprintf("Network.TxDropped %s", container.Aliases[0]), int(container.Stats[0].Network.TxDropped), ttl, container.Aliases, stateEmpty)
 			}
 
-			returnedFS, err := c.ContainerInfo("/",nil)
+			returnedFS, err := c.ContainerInfo("/", nil)
 			if err != nil {
 				glog.Fatal("unable to ContainerInfo: %s", err)
 			}
 			containerStats := returnedFS.Stats[0]
-			for _, fs := range containerStats.Filesystem  {
-				fsUsagePercent := getFsUsagePercent(fs.Usage,fs.Limit)
+			for _, fs := range containerStats.Filesystem {
+				fsUsagePercent := getFsUsagePercent(fs.Usage, fs.Limit)
 				stateFS := computeStatePercent(float64(fsUsagePercent))
 				tags := []string{fs.Device}
 				pushToRiemann(r, *hostEventRiemann, fmt.Sprintf("Filesystem.UsagePercent %s", fs.Device), fsUsagePercent, ttl, tags, stateFS)
 			}
-
-			
-			
-			
 		}
 	}
 }
 
 func getFsUsagePercent(usage uint64, limite uint64) float64 {
-	return roundFloat(float64(usage*100)/float64(limite), 2);
+	return roundFloat(float64(usage*100)/float64(limite), 2)
 }
 
-
 func computeStatePercent(value float64) string {
-    switch {
-        case value > float64(*thresholdCritical): return "critical"
-        case value > float64(*thresholdWarning): return "warning"
-    }
-    return "ok"
+	switch {
+	case value > float64(*thresholdCritical):
+		return "critical"
+	case value > float64(*thresholdWarning):
+		return "warning"
+	}
+	return "ok"
 }
 
 func roundFloat(x float64, prec int) float64 {
@@ -149,14 +146,14 @@ func roundFloat(x float64, prec int) float64 {
 func getCpuTotalPercent(spec *info.ContainerSpec, stats []*info.ContainerStats, machine *info.MachineInfo) float64 {
 
 	cpuUsage := float64(0)
-	if (spec.HasCpu && len(stats) >= 2) {
-		cur := stats[len(stats) - 1];
-		prev := stats[len(stats) - 2];
-		rawUsage := float64(cur.Cpu.Usage.Total - prev.Cpu.Usage.Total);
-		intervalInNs := float64(cur.Timestamp.Sub(prev.Timestamp).Nanoseconds());
+	if spec.HasCpu && len(stats) >= 2 {
+		cur := stats[len(stats)-1]
+		prev := stats[len(stats)-2]
+		rawUsage := float64(cur.Cpu.Usage.Total - prev.Cpu.Usage.Total)
+		intervalInNs := float64(cur.Timestamp.Sub(prev.Timestamp).Nanoseconds())
 		// Convert to millicores and take the percentage
-		cpuUsage = roundFloat(((rawUsage / intervalInNs) / float64(machine.NumCores)) * float64(100), 2);
-		if (cpuUsage > float64(100)) {
+		cpuUsage = roundFloat(((rawUsage/intervalInNs)/float64(machine.NumCores))*float64(100), 2)
+		if cpuUsage > float64(100) {
 			cpuUsage = float64(100)
 		}
 	}
