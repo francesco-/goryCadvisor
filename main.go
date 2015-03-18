@@ -9,6 +9,7 @@ import (
 	"github.com/bigdatadev/goryman"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/client"
+	"github.com/google/cadvisor/info/v1"
 
 )
 
