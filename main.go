@@ -9,8 +9,10 @@ import (
 	"github.com/bigdatadev/goryman"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/client"
-	"github.com/google/cadvisor/info/v2"
+
 )
+
+//	"github.com/google/cadvisor/info/v2"
 
 var riemannAddress = flag.String("riemann_address", "localhost:5555", "specify the riemann server location")
 var cadvisorAddress = flag.String("cadvisor_address", "http://localhost:8080", "specify the cadvisor API server location")
